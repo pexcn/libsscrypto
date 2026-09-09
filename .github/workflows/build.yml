@@ -13,9 +13,10 @@ env:
   # derives its output directory from $(PlatformToolset) and libsscrypto.vcxproj
   # follows it, so the two stay in step whatever this is set to.
   PLATFORM_TOOLSET: v143
-  # 3.5.x is the current LTS. The Win32 libcrypto.lib committed under
-  # openssl-prebuilt-lib/ is 1.1.0g and long past EOL, and there has never been
-  # an x64 one, so CI builds its own for both platforms instead of using it.
+  # CI builds libcrypto itself for both platforms rather than using whatever
+  # is committed under openssl-prebuilt-lib/, so this is the version that
+  # actually gets linked here. Keep it in step with
+  # openssl-prebuilt-lib/README.txt.
   OPENSSL_VERSION: 3.5.8
 
 jobs:
@@ -71,12 +72,23 @@ jobs:
           cd ..
           mkdir openssl-lib || exit /b 1
           copy /y openssl-%OPENSSL_VERSION%\libcrypto.lib openssl-lib\ || exit /b 1
+          rem the pdb is optional -- do not fail the build if it was not produced
+          copy /y openssl-%OPENSSL_VERSION%\ossl_static.pdb openssl-lib\
 
       - name: Stage OpenSSL
         shell: cmd
         run: |
           if not exist openssl-prebuilt-lib\${{ matrix.platform }} mkdir openssl-prebuilt-lib\${{ matrix.platform }} || exit /b 1
           copy /y openssl-lib\libcrypto.lib openssl-prebuilt-lib\${{ matrix.platform }}\ || exit /b 1
+
+      # openssl-prebuilt-lib/ has to be updated by hand, so hand the freshly
+      # built library out as an artifact rather than making anyone install NASM.
+      - name: Upload OpenSSL artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: openssl-${{ matrix.platform }}
+          path: openssl-lib/*
+          if-no-files-found: error
 
       - name: Build
         shell: cmd
