@@ -18,11 +18,9 @@ git submodule update --init --recursive
 
   b) Change the platform to Win32 (32-bit) or x64 (64-bit).
 
-     Release is the only configuration; there is no Debug build.
-
-     For x64 you must first provide an x64 OpenSSL static library:
-     follow `openssl-prebuilt-lib/README.txt` (the `VC-WIN64A` target)
-     and drop the resulting `libcrypto.lib` into `openssl-prebuilt-lib\x64\`.
+     Release is the only configuration; there is no Debug build. Both
+     platforms link the `libcrypto.lib` committed under
+     `openssl-prebuilt-lib/`, so nothing has to be fetched or built first.
 
   c) Right click the project mbedTLS, select Properties, then C/C++ / Code
      Generation, and change Runtime Library to /MT. mbedTLS leaves this at the

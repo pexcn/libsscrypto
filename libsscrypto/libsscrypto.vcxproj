@@ -71,7 +71,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>Ws2_32.lib;crypt32.lib;bcrypt.lib;libsodium.lib;mbedTLS.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;gdi32.lib;advapi32.lib;crypt32.lib;user32.lib;bcrypt.lib;libsodium.lib;mbedTLS.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>libsscrypto.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
@@ -91,7 +91,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>libsscrypto.def</ModuleDefinitionFile>
-      <AdditionalDependencies>Ws2_32.lib;crypt32.lib;bcrypt.lib;libsodium.lib;mbedTLS.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;gdi32.lib;advapi32.lib;crypt32.lib;user32.lib;bcrypt.lib;libsodium.lib;mbedTLS.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
