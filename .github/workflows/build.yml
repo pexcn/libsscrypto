@@ -1,0 +1,75 @@
+name: build
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PLATFORM_TOOLSET: v143
+
+jobs:
+  build:
+    runs-on: windows-2025
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - solution: x86
+            platform: Win32
+            output: Release
+          - solution: x64
+            platform: x64
+            output: x64/Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Setup MSVC
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: ${{ matrix.solution }}
+
+      - name: Check OpenSSL
+        shell: cmd
+        run: |
+          if not exist openssl-prebuilt-lib\${{ matrix.platform }}\libcrypto.lib (
+            echo openssl-prebuilt-lib\${{ matrix.platform }}\libcrypto.lib is missing
+            echo run the "openssl" workflow and commit its artifact
+            exit /b 1
+          )
+
+      - name: Build
+        shell: cmd
+        run: >
+          msbuild libsscrypto.sln /m /nologo
+          /p:Configuration=Release
+          /p:Platform=${{ matrix.solution }}
+          /p:PlatformToolset=%PLATFORM_TOOLSET%
+          /p:WindowsTargetPlatformVersion=10.0
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: libsscrypto-${{ matrix.platform }}
+          path: |
+            ${{ matrix.output }}\libsscrypto*.dll
+            ${{ matrix.output }}\libsscrypto*.pdb
+          if-no-files-found: error
+
+      - name: Package release archive
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: Compress-Archive -Path ${{ matrix.output }}\libsscrypto*.dll -DestinationPath libsscrypto-${{ matrix.platform }}.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: libsscrypto-${{ matrix.platform }}.zip

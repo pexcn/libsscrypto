@@ -47,12 +47,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)libsodium\src\libsodium\include;$(SolutionDir)mbedtls\include;$(SolutionDir)shadowsocks-libev\src;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)libsodium\bin\Win32\Release\v141\static;$(SolutionDir)$(Configuration);$(SolutionDir)openssl-prebuilt-lib\$(Platform)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)libsodium\bin\$(Platform)\$(Configuration)\$(PlatformToolset)\static;$(SolutionDir)$(Configuration);$(SolutionDir)openssl-prebuilt-lib\$(Platform)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)libsodium\src\libsodium\include;$(SolutionDir)mbedtls\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)libsodium\bin\x64\Release\v141\static;$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)openssl-prebuilt-lib\$(Platform)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)libsodium\bin\$(Platform)\$(Configuration)\$(PlatformToolset)\static;$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)openssl-prebuilt-lib\$(Platform)\;$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

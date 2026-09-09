@@ -22,16 +22,18 @@ git submodule update --init --recursive
      platforms link the `libcrypto.lib` committed under
      `openssl-prebuilt-lib/`, so nothing has to be fetched or built first.
 
-  c) Right click the project mbedTLS, select Properties, then C/C++ / Code
-     Generation, and change Runtime Library to /MT. mbedTLS leaves this at the
-     VC++ default, which is /MD, and mixing it with the /MT libsscrypto fails
-     the link with LNK2038. The setting is per configuration/platform, so Win32
-     and x64 have to be changed separately.
+  c) Right click Solution, and select Build Solution.
 
-     The Platform Toolset no longer has to be touched: 3.6.7 builds v141 in
-     every configuration, where 2.7.0 pinned `Windows7.1SDK` in Release|x64.
+     Nothing has to be changed by hand in the mbedTLS project any more. It
+     builds v141 in every configuration now, and `Directory.Build.targets`
+     forces its Runtime Library to /MT so it links against the /MT
+     libsscrypto. On a newer Visual Studio, override the toolset on the
+     command line instead of retargeting the projects, the way CI does:
 
-  d) Right click Solution, and select Build Solution.
+     ```
+     msbuild libsscrypto.sln /p:Configuration=Release /p:Platform=x64 ^
+       /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0
+     ```
 
 3) Output
 
@@ -41,3 +43,13 @@ git submodule update --init --recursive
   The two DLLs export the same symbols, so a 64-bit host loads the x64 build
   unchanged. Note the different file name: it keeps the two architectures from
   colliding when a host unpacks them to the same directory.
+
+## Continuous integration
+
+`.github/workflows/build.yml` builds both platforms on every push and, on a
+tag, publishes the DLLs as a release. It differs from the steps above in one
+way, because a hosted runner has no VS2017: the toolset is overridden on the
+MSBuild command line, as above. libsodium's output directory is derived from
+`$(PlatformToolset)` and libsscrypto.vcxproj follows it, so the two stay in
+step whichever toolset is selected. Everything else -- OpenSSL included -- is
+what a local build uses.
