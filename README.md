@@ -19,15 +19,13 @@ Studio project does not build without it.
 
   a) Open libsscrypto.sln with Visual Studio 2017.
 
-  b) Change the configuration to Release
+  b) Change the platform to Win32 (32-bit) or x64 (64-bit).
 
-  c) Change the platform to Win32 (32-bit) or x64 (64-bit).
+     Release is the only configuration; there is no Debug build. Both
+     platforms link the `libcrypto.lib` committed under
+     `openssl-prebuilt-lib/`, so nothing has to be fetched or built first.
 
-     For x64 you must first provide an x64 OpenSSL static library:
-     follow `openssl-prebuilt-lib/README.txt` (the `VC-WIN64A` target)
-     and drop the resulting `libcrypto.lib` into `openssl-prebuilt-lib\x64\`.
-
-  d) Right click Solution, and select Build Solution.
+  c) Right click Solution, and select Build Solution.
 
      Nothing has to be changed by hand in the mbedTLS project any more. It
      builds v141 in every configuration now, and `Directory.Build.targets`
@@ -51,14 +49,17 @@ Studio project does not build without it.
 
 ## Continuous integration
 
-`.github/workflows/build.yml` builds both platforms on every push. It differs
-from the steps above in two ways, because a hosted runner has neither VS2017
-nor a prebuilt OpenSSL:
+`.github/workflows/build.yml` builds both platforms on every push and, on a
+tag, publishes the DLLs as a release. It differs from the steps above in one
+way, because a hosted runner has no VS2017: the toolset is overridden on the
+MSBuild command line, as above. libsodium's output directory is derived from
+`$(PlatformToolset)` and libsscrypto.vcxproj follows it, so the two stay in
+step whichever toolset is selected. Everything else -- OpenSSL included -- is
+what a local build uses.
 
-  * The toolset is overridden on the MSBuild command line, as above.
-    libsodium's output directory is derived from `$(PlatformToolset)` and
-    libsscrypto.vcxproj follows it, so the two stay in step whichever toolset
-    is selected.
-  * OpenSSL is built from source and cached, for both platforms, rather than
-    using the `libcrypto.lib` committed under `openssl-prebuilt-lib/`. The
-    result is published as the `openssl-<platform>` artifact.
+`.github/workflows/openssl.yml` rebuilds `libcrypto.lib` for both platforms
+from source, following the same steps as `openssl-prebuilt-lib/README.txt`, and
+publishes each as the `openssl-<platform>` artifact. It runs only when started
+by hand (Actions -> openssl -> Run workflow, with the version to build), since
+the resulting `.lib` is committed to this repository; use it to regenerate
+`openssl-prebuilt-lib/` without installing Perl and NASM locally.
