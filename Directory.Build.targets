@@ -1,0 +1,28 @@
+<Project>
+
+  <!--
+    mbedTLS ships its project with RuntimeLibrary left at the VC++ default, which
+    is /MD for Release and /MDd for Debug. libsscrypto and libsodium both build
+    /MT, and mixing the two fails the link with LNK2038. README used to work
+    around this by asking for the setting to be changed by hand in the IDE, which
+    an unattended command line or CI build cannot do -- so force it here instead.
+
+    This file is imported after Microsoft.Cpp.targets, so it wins over the
+    toolset defaults (a Directory.Build.props would be evaluated too early).
+    MSBuild searches upward from each project directory and neither submodule
+    ships one of its own, so the mbedTLS project inside mbedtls/ finds this.
+  -->
+
+  <ItemDefinitionGroup Condition="'$(MSBuildProjectName)' == 'mbedTLS' And '$(UseDebugLibraries)' != 'true'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(MSBuildProjectName)' == 'mbedTLS' And '$(UseDebugLibraries)' == 'true'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+</Project>
