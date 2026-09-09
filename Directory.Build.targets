@@ -7,7 +7,7 @@
     for the setting to be changed by hand in the IDE, which an unattended command
     line or CI build cannot do, so force it here instead.
 
-    Only Release is configured -- the solution has no Debug configuration -- but
+    Only Release is configured, the solution has no Debug configuration, but
     the UseDebugLibraries guard is kept so that building the mbedTLS project on
     its own in one of its own Debug configurations is left alone.
 
