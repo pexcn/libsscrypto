@@ -40,6 +40,17 @@ jobs:
 
       # no-apps / no-docs / no-tests cut most of the build; only libcrypto.lib is
       # needed, and only for the ten EVP_* functions libsscrypto.def re-exports.
+      #
+      # The Windows targets hard-code "/Zi /Fdossl_static.pdb" into lib_cflags
+      # (Configurations/10-main.conf, VC-common), which --release does not undo.
+      # /Zi keeps type information in ossl_static.pdb but leaves the symbol and
+      # line tables in each object's .debug$S section, i.e. inside the .lib:
+      # they were 63% of the 43 MB x86 archive and 53% of the 51 MB x64 one.
+      # The linker only pulls in objects it references, so this never reached
+      # the shipped DLL -- it was pure repository weight. Strip both flags out
+      # of the generated makefile. /Zi does not affect code generation, so the
+      # emitted code is unchanged; only the debug sections go away, and with
+      # them ossl_static.pdb, which cl no longer produces at all.
       - name: Build OpenSSL
         shell: cmd
         env:
@@ -51,12 +62,17 @@ jobs:
           tar -xzf openssl.tar.gz || exit /b 1
           cd openssl-%OPENSSL_VERSION% || exit /b 1
           perl Configure ${{ matrix.target }} no-shared no-apps no-docs no-tests --release || exit /b 1
+          perl -i -pe "s{\s*/Zi\b}{}g, s{\s*/Fd\S+}{}g if /^(?:CNF_)?LIB_CFLAGS\s*=/" makefile || exit /b 1
+          findstr /b /c:"LIB_CFLAGS" makefile || exit /b 1
           nmake build_libs || exit /b 1
+          if exist ossl_static.pdb (
+            echo ossl_static.pdb was produced, so LIB_CFLAGS still carries /Zi
+            exit /b 1
+          )
           cd ..
           mkdir openssl-lib || exit /b 1
           copy /y openssl-%OPENSSL_VERSION%\libcrypto.lib openssl-lib\ || exit /b 1
-          rem the pdb is optional -- do not fail the build if it was not produced
-          copy /y openssl-%OPENSSL_VERSION%\ossl_static.pdb openssl-lib\
+          dir openssl-lib
 
       - name: Upload OpenSSL artifact
         uses: actions/upload-artifact@v7

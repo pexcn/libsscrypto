@@ -30,6 +30,7 @@ cd openssl-3.5.8
 # Win32 x86
 set PATH=D:\NASM-32;%PATH%
 perl Configure VC-WIN32 no-shared no-apps no-docs no-tests --release
+perl -i -pe "s{\s*/Zi\b}{}g, s{\s*/Fd\S+}{}g if /^(?:CNF_)?LIB_CFLAGS\s*=/" makefile
 nmake build_libs
 
 # x64
@@ -41,8 +42,19 @@ perl Configure VC-WIN64A no-shared no-apps no-docs no-tests --release
 # most of the build time. Drop them and run "nmake test" if you want the test
 # suite. To rebuild from scratch: nmake distclean
 
-# Then copy libcrypto.lib (and ossl_static.pdb, if you want the debug info)
-# from the build root into Win32\ or x64\ here.
+# The Windows targets hard-code "/Zi /Fdossl_static.pdb" into lib_cflags
+# ("VC-common" in Configurations/10-main.conf) and --release does not undo it.
+# /Zi puts type information in ossl_static.pdb but leaves the symbol and line
+# tables in the .debug$S section of every object, that is, inside
+# libcrypto.lib: 63% of the 43 MB x86 archive and 53% of the 51 MB x64 one.
+# The linker only pulls in objects it references, so none of it ever reached
+# the shipped DLL; it was purely weight in this repository. The perl line
+# above strips both flags out of the generated makefile, which cuts the
+# archive to roughly a third. /Zi has no effect on code generation -- the
+# emitted code is the same either way -- and without it cl produces no
+# ossl_static.pdb at all, which is why none is committed here any more.
+
+# Then copy libcrypto.lib from the build root into Win32\ or x64\ here.
 
 # no-shared makes OpenSSL compile libcrypto with /MT /Zl. /Zl leaves the CRT
 # choice out of the object files, so the library links into either a /MT or a
