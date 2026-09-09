@@ -1,0 +1,66 @@
+name: openssl
+
+# Reproducible path for regenerating openssl-prebuilt-lib/. It is deliberately
+# manual: the .lib is committed to the repository and the normal build (see
+# build.yml) links that copy, so this only needs to run when the OpenSSL version
+# changes. Download the openssl-<platform> artifacts it produces and commit them
+# over openssl-prebuilt-lib/Win32/ and openssl-prebuilt-lib/x64/.
+#
+# The steps below mirror openssl-prebuilt-lib/README.txt; keep the two in step.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: OpenSSL version to build
+        required: true
+        # Keep in step with openssl-prebuilt-lib/README.txt.
+        default: 3.5.8
+
+jobs:
+  openssl:
+    runs-on: windows-2025
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86
+            platform: Win32
+            target: VC-WIN32
+          - arch: x64
+            platform: x64
+            target: VC-WIN64A
+
+    steps:
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
+      # no-apps / no-docs / no-tests cut most of the build; only libcrypto.lib is
+      # needed, and only for the ten EVP_* functions libsscrypto.def re-exports.
+      - name: Build OpenSSL
+        shell: cmd
+        env:
+          OPENSSL_VERSION: ${{ inputs.version }}
+        run: |
+          choco install nasm --no-progress -y || exit /b 1
+          set PATH=C:\Program Files\NASM;%PATH%
+          curl -fsSLo openssl.tar.gz https://github.com/openssl/openssl/releases/download/openssl-%OPENSSL_VERSION%/openssl-%OPENSSL_VERSION%.tar.gz || exit /b 1
+          tar -xzf openssl.tar.gz || exit /b 1
+          cd openssl-%OPENSSL_VERSION% || exit /b 1
+          perl Configure ${{ matrix.target }} no-shared no-apps no-docs no-tests --release || exit /b 1
+          nmake build_libs || exit /b 1
+          cd ..
+          mkdir openssl-lib || exit /b 1
+          copy /y openssl-%OPENSSL_VERSION%\libcrypto.lib openssl-lib\ || exit /b 1
+          rem the pdb is optional -- do not fail the build if it was not produced
+          copy /y openssl-%OPENSSL_VERSION%\ossl_static.pdb openssl-lib\
+
+      - name: Upload OpenSSL artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: openssl-${{ matrix.platform }}
+          path: openssl-lib/*
+          if-no-files-found: error

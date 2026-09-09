@@ -13,11 +13,6 @@ env:
   # derives its output directory from $(PlatformToolset) and libsscrypto.vcxproj
   # follows it, so the two stay in step whatever this is set to.
   PLATFORM_TOOLSET: v143
-  # CI builds libcrypto itself for both platforms rather than using whatever
-  # is committed under openssl-prebuilt-lib/, so this is the version that
-  # actually gets linked here. Keep it in step with
-  # openssl-prebuilt-lib/README.txt.
-  OPENSSL_VERSION: 3.5.8
 
 jobs:
   build:
@@ -31,11 +26,9 @@ jobs:
           # one the projects use -- the solution maps Release|x86 to Release|Win32.
           - solution: x86
             platform: Win32
-            openssl_target: VC-WIN32
             output: Release
           - solution: x64
             platform: x64
-            openssl_target: VC-WIN64A
             output: x64/Release
 
     steps:
@@ -49,46 +42,19 @@ jobs:
         with:
           arch: ${{ matrix.solution }}
 
-      - name: Cache OpenSSL
-        id: openssl
-        uses: actions/cache@v6
-        with:
-          path: openssl-lib
-          key: openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.platform }}-${{ env.PLATFORM_TOOLSET }}
-
-      # no-apps / no-docs / no-tests cut most of the build; only libcrypto.lib is
-      # needed, and only for the ten EVP_* functions libsscrypto.def re-exports.
-      - name: Build OpenSSL
-        if: steps.openssl.outputs.cache-hit != 'true'
+      # libcrypto.lib is committed under openssl-prebuilt-lib/, so CI links
+      # exactly what a local build does. Rebuilding it from source is a separate,
+      # manually triggered workflow (openssl.yml); its artifact is what gets
+      # copied in here. Fail loudly rather than letting the link report ten
+      # unresolved EVP_* symbols.
+      - name: Check OpenSSL
         shell: cmd
         run: |
-          choco install nasm --no-progress -y || exit /b 1
-          set PATH=C:\Program Files\NASM;%PATH%
-          curl -fsSLo openssl.tar.gz https://github.com/openssl/openssl/releases/download/openssl-%OPENSSL_VERSION%/openssl-%OPENSSL_VERSION%.tar.gz || exit /b 1
-          tar -xzf openssl.tar.gz || exit /b 1
-          cd openssl-%OPENSSL_VERSION% || exit /b 1
-          perl Configure ${{ matrix.openssl_target }} no-shared no-apps no-docs no-tests --release || exit /b 1
-          nmake build_libs || exit /b 1
-          cd ..
-          mkdir openssl-lib || exit /b 1
-          copy /y openssl-%OPENSSL_VERSION%\libcrypto.lib openssl-lib\ || exit /b 1
-          rem the pdb is optional -- do not fail the build if it was not produced
-          copy /y openssl-%OPENSSL_VERSION%\ossl_static.pdb openssl-lib\
-
-      - name: Stage OpenSSL
-        shell: cmd
-        run: |
-          if not exist openssl-prebuilt-lib\${{ matrix.platform }} mkdir openssl-prebuilt-lib\${{ matrix.platform }} || exit /b 1
-          copy /y openssl-lib\libcrypto.lib openssl-prebuilt-lib\${{ matrix.platform }}\ || exit /b 1
-
-      # openssl-prebuilt-lib/ has to be updated by hand, so hand the freshly
-      # built library out as an artifact rather than making anyone install NASM.
-      - name: Upload OpenSSL artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: openssl-${{ matrix.platform }}
-          path: openssl-lib/*
-          if-no-files-found: error
+          if not exist openssl-prebuilt-lib\${{ matrix.platform }}\libcrypto.lib (
+            echo openssl-prebuilt-lib\${{ matrix.platform }}\libcrypto.lib is missing
+            echo run the "openssl" workflow and commit its artifact
+            exit /b 1
+          )
 
       - name: Build
         shell: cmd

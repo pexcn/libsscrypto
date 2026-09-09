@@ -48,6 +48,8 @@ perl Configure VC-WIN64A no-shared no-apps no-docs no-tests --release
 # choice out of the object files, so the library links into either a /MT or a
 # /MD host -- but libsscrypto builds /MT, so keep it that way.
 
-# .github/workflows/build.yml runs exactly these steps on every push and
-# uploads the result as the "openssl-<platform>" artifact, so you can take the
-# .lib from there instead of building it locally.
+# .github/workflows/openssl.yml runs exactly these steps for both platforms
+# and uploads the result as the "openssl-<platform>" artifact, so you can take
+# the .lib from there instead of building it locally. It is triggered by hand
+# (Actions -> openssl -> Run workflow) because the .lib next to this file is
+# committed and only has to be regenerated when the version above changes.
