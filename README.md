@@ -16,15 +16,15 @@ git submodule update --init
 
   a) Open libsscrypto.sln with Visual Studio 2017.
 
-  b) Change the configuration to Release
+  b) Change the platform to Win32 (32-bit) or x64 (64-bit).
 
-  c) Change the platform to Win32 (32-bit) or x64 (64-bit).
+     Release is the only configuration; there is no Debug build.
 
      For x64 you must first provide an x64 OpenSSL static library:
      follow `openssl-prebuilt-lib/README.txt` (the `VC-WIN64A` target)
      and drop the resulting `libcrypto.lib` into `openssl-prebuilt-lib\x64\`.
 
-  d) Right click the project mbedTLS, and select Properties.
+  c) Right click the project mbedTLS, and select Properties.
 
      i) Select General on left panel, and change Platform Toolset to v141.
         (For the x64 configuration this is not just an inherited default --
@@ -35,7 +35,7 @@ git submodule update --init
      Do this for the configuration you are building; the setting is per
      configuration/platform, so Win32 and x64 have to be changed separately.
 
-  e) Right click Solution, and select Build Solution.
+  d) Right click Solution, and select Build Solution.
 
 3) Output
 
