@@ -18,10 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - solution: x86
+          - arch: x86
             platform: Win32
             output: Release
-          - solution: x64
+          - arch: x64
             platform: x64
             output: x64/Release
 
@@ -34,7 +34,7 @@ jobs:
       - name: Setup MSVC
         uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
-          arch: ${{ matrix.solution }}
+          arch: ${{ matrix.arch }}
 
       - name: Check OpenSSL
         shell: cmd
@@ -50,7 +50,7 @@ jobs:
         run: >
           msbuild libsscrypto.sln /m /nologo
           /p:Configuration=Release
-          /p:Platform=${{ matrix.solution }}
+          /p:Platform=${{ matrix.platform }}
           /p:PlatformToolset=%PLATFORM_TOOLSET%
 
       - name: Upload artifact
