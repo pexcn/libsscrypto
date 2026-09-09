@@ -9,8 +9,8 @@ EXPORTS
 	cipher_set_iv=mbedtls_cipher_set_iv
 	cipher_reset=mbedtls_cipher_reset
 	cipher_free=mbedtls_cipher_free
-	cipher_auth_encrypt=mbedtls_cipher_auth_encrypt
-	cipher_auth_decrypt=mbedtls_cipher_auth_decrypt
+	cipher_auth_encrypt_ext=mbedtls_cipher_auth_encrypt_ext
+	cipher_auth_decrypt_ext=mbedtls_cipher_auth_decrypt_ext
 	crypto_stream_chacha20_xor_ic
 	crypto_stream_chacha20_ietf_xor_ic
 	crypto_stream_salsa20_xor_ic
@@ -24,8 +24,8 @@ EXPORTS
 	sodium_increment
 	sodium_init
 	cipher_get_size_ex
-	md5_ret=mbedtls_md5_ret
-	hkdf=mbedtls_hkdf
+	md5_ret=mbedtls_md5
+	hkdf=sscrypto_hkdf_sha1
 	EVP_CIPHER_CTX_new
 	EVP_CIPHER_CTX_free
 	EVP_CIPHER_CTX_reset

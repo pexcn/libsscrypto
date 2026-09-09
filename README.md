@@ -9,8 +9,11 @@ Build libsscrypto.dll for shadowsocks-windows.
 ```
 git clone https://github.com/shadowsocks/libsscrypto.git
 cd libsscrypto
-git submodule update --init
+git submodule update --init --recursive
 ```
+
+`--recursive` matters: mbedTLS has a submodule of its own, and its Visual
+Studio project does not build without it.
 
 2) Compile
 
@@ -24,16 +27,18 @@ git submodule update --init
      follow `openssl-prebuilt-lib/README.txt` (the `VC-WIN64A` target)
      and drop the resulting `libcrypto.lib` into `openssl-prebuilt-lib\x64\`.
 
-  d) Right click the project mbedTLS, select Properties, then General, and
-     change Platform Toolset to v141. This is per configuration/platform, so
-     Win32 and x64 have to be changed separately -- and for x64 it is not
-     merely an inherited default, the project file pins it to `Windows7.1SDK`.
+  d) Right click Solution, and select Build Solution.
 
-     The Runtime Library no longer has to be changed by hand: mbedTLS would
-     otherwise build /MD and fail to link against the /MT libsscrypto, so
-     `Directory.Build.targets` forces /MT for it.
+     Nothing has to be changed by hand in the mbedTLS project any more. It
+     builds v141 in every configuration now, and `Directory.Build.targets`
+     forces its Runtime Library to /MT so it links against the /MT
+     libsscrypto. On a newer Visual Studio, override the toolset on the
+     command line instead of retargeting the projects, the way CI does:
 
-  e) Right click Solution, and select Build Solution.
+     ```
+     msbuild libsscrypto.sln /p:Configuration=Release /p:Platform=x64 ^
+       /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0
+     ```
 
 3) Output
 
@@ -50,10 +55,10 @@ git submodule update --init
 from the steps above in two ways, because a hosted runner has neither VS2017
 nor a prebuilt OpenSSL:
 
-  * The toolset is overridden on the MSBuild command line
-    (`/p:PlatformToolset` and `/p:WindowsTargetPlatformVersion`), which also
-    takes care of step 2d. libsodium's output directory is derived from
-    `$(PlatformToolset)` and libsscrypto.vcxproj follows it, so the two stay in
-    step whichever toolset is selected.
+  * The toolset is overridden on the MSBuild command line, as above.
+    libsodium's output directory is derived from `$(PlatformToolset)` and
+    libsscrypto.vcxproj follows it, so the two stay in step whichever toolset
+    is selected.
   * OpenSSL is built from source and cached, for both platforms, rather than
-    using the `libcrypto.lib` committed under `openssl-prebuilt-lib/`.
+    using the `libcrypto.lib` committed under `openssl-prebuilt-lib/`. The
+    result is published as the `openssl-<platform>` artifact.
