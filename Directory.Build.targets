@@ -5,7 +5,7 @@
     is /MD for Release and /MDd for Debug. libsscrypto and libsodium both build
     /MT, and mixing the two fails the link with LNK2038. README used to work
     around this by asking for the setting to be changed by hand in the IDE, which
-    an unattended command line or CI build cannot do -- so force it here instead.
+    an unattended command line or CI build cannot do, so force it here instead.
 
     This file is imported after Microsoft.Cpp.targets, so it wins over the
     toolset defaults (a Directory.Build.props would be evaluated too early).
