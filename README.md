@@ -51,5 +51,12 @@ tag, publishes the DLLs as a release. It differs from the steps above in one
 way, because a hosted runner has no VS2017: the toolset is overridden on the
 MSBuild command line, as above. libsodium's output directory is derived from
 `$(PlatformToolset)` and libsscrypto.vcxproj follows it, so the two stay in
-step whichever toolset is selected. Everything else -- OpenSSL included -- is
+step whichever toolset is selected. Everything else, OpenSSL included, is
 what a local build uses.
+
+`.github/workflows/openssl.yml` rebuilds `libcrypto.lib` for both platforms
+from source, following the same steps as `openssl-prebuilt-lib/README.txt`, and
+publishes each as the `openssl-<platform>` artifact. It runs only when started
+by hand (Actions -> openssl -> Run workflow, with the version to build), since
+the resulting `.lib` is committed to this repository; use it to regenerate
+`openssl-prebuilt-lib/` without installing Perl and NASM locally.
