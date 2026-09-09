@@ -34,6 +34,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -46,12 +47,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)libsodium\src\libsodium\include;$(SolutionDir)mbedtls\include;$(SolutionDir)shadowsocks-libev\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libsodium\src\libsodium\include;$(SolutionDir)mbedtls\include;$(SolutionDir)blake3\c;$(SolutionDir)shadowsocks-libev\src;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)libsodium\bin\$(Platform)\$(Configuration)\$(PlatformToolset)\static;$(SolutionDir)$(Configuration);$(SolutionDir)openssl-prebuilt-lib\$(Platform)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)libsodium\src\libsodium\include;$(SolutionDir)mbedtls\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libsodium\src\libsodium\include;$(SolutionDir)mbedtls\include;$(SolutionDir)blake3\c;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)libsodium\bin\$(Platform)\$(Configuration)\$(PlatformToolset)\static;$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)openssl-prebuilt-lib\$(Platform)\;$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
@@ -95,17 +96,65 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="blake3_hasher_size.c" />
     <ClCompile Include="cipher_get_size_ex.c" />
     <ClCompile Include="hkdf.c" />
+    <ClCompile Include="..\blake3\c\blake3.c" />
+    <ClCompile Include="..\blake3\c\blake3_dispatch.c" />
+    <ClCompile Include="..\blake3\c\blake3_portable.c" />
+  </ItemGroup>
+  <!--
+    BLAKE3 selects its SIMD backend at run time from CPUID, so every backend is
+    linked in and blake3_dispatch.c picks between them. Upstream ships two
+    interchangeable sets under the same symbol names: hand written assembly,
+    which is x86-64 only and what upstream's own build prefers there, and C
+    intrinsics for everywhere else. Follow that split.
+  -->
+  <ItemGroup Condition="'$(Platform)'=='x64'">
+    <MASM Include="..\blake3\c\blake3_sse2_x86-64_windows_msvc.asm" />
+    <MASM Include="..\blake3\c\blake3_sse41_x86-64_windows_msvc.asm" />
+    <MASM Include="..\blake3\c\blake3_avx2_x86-64_windows_msvc.asm" />
+    <MASM Include="..\blake3\c\blake3_avx512_x86-64_windows_msvc.asm" />
+  </ItemGroup>
+  <!--
+    Win32 has no assembly upstream, so build the intrinsics there. Each file
+    needs its own instruction set enabled and has to be kept out of link time
+    code generation: /GL lets the linker inline across objects, which would be
+    free to place an AVX-512 instruction in a function reached before the CPUID
+    check rules it out.
+
+    blake3_sse41.c is built with no /arch at all. MSVC has no SSE4.1 flag and,
+    unlike GCC, does not gate intrinsics on /arch, so none is needed. Upstream's
+    CMake passes /arch:AVX in its place, which would fault on a CPU that has
+    SSE4.1 but not AVX, the very case dispatch thinks it is serving.
+  -->
+  <ItemGroup Condition="'$(Platform)'=='Win32'">
+    <ClCompile Include="..\blake3\c\blake3_sse2.c">
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+    </ClCompile>
+    <ClCompile Include="..\blake3\c\blake3_sse41.c">
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+    </ClCompile>
+    <ClCompile Include="..\blake3\c\blake3_avx2.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+    </ClCompile>
+    <ClCompile Include="..\blake3\c\blake3_avx512.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="libsscrypto.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\blake3\c\blake3.h" />
     <ClInclude Include="..\mbedtls\include\mbedtls\cipher.h" />
     <ClInclude Include="..\mbedtls\include\mbedtls\md.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

@@ -36,3 +36,10 @@ EXPORTS
 	EVP_CIPHER_CTX_set_key_length
 	EVP_CIPHER_CTX_ctrl
 	EVP_get_cipherbyname
+	blake3_hasher_init
+	blake3_hasher_init_keyed
+	blake3_hasher_init_derive_key_raw
+	blake3_hasher_reset
+	blake3_hasher_update
+	blake3_hasher_finalize
+	blake3_hasher_size=sscrypto_blake3_hasher_size

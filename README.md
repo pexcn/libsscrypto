@@ -22,6 +22,12 @@ git submodule update --init --recursive
      platforms link the `libcrypto.lib` committed under
      `openssl-prebuilt-lib/`, so nothing has to be fetched or built first.
 
+     BLAKE3, which the 2022-blake3-* methods need for key derivation, is
+     compiled from source into the DLL and picks its SIMD backend at run time.
+     x64 assembles upstream's hand written x86-64 assembly with MASM, which
+     the C++ workload already installs; Win32, which upstream ships no assembly
+     for, compiles the C intrinsics instead. Neither needs anything extra.
+
   c) Right click Solution, and select Build Solution.
 
      Visual Studio will offer to retarget mbedTLS, whose upstream project
