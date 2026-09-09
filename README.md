@@ -9,7 +9,7 @@ Build libsscrypto.dll for shadowsocks-windows.
 ```
 git clone https://github.com/shadowsocks/libsscrypto.git
 cd libsscrypto
-git submodule update --init
+git submodule update --init --recursive
 ```
 
 2) Compile
@@ -24,16 +24,14 @@ git submodule update --init
      follow `openssl-prebuilt-lib/README.txt` (the `VC-WIN64A` target)
      and drop the resulting `libcrypto.lib` into `openssl-prebuilt-lib\x64\`.
 
-  c) Right click the project mbedTLS, and select Properties.
+  c) Right click the project mbedTLS, select Properties, then C/C++ / Code
+     Generation, and change Runtime Library to /MT. mbedTLS leaves this at the
+     VC++ default, which is /MD, and mixing it with the /MT libsscrypto fails
+     the link with LNK2038. The setting is per configuration/platform, so Win32
+     and x64 have to be changed separately.
 
-     i) Select General on left panel, and change Platform Toolset to v141.
-        (For the x64 configuration this is not just an inherited default --
-        the project file pins it to `Windows7.1SDK`, so it must be changed.)
-
-     ii) Select C/C++ / Code Generation, and change Runtime Library to /MT .
-
-     Do this for the configuration you are building; the setting is per
-     configuration/platform, so Win32 and x64 have to be changed separately.
+     The Platform Toolset no longer has to be touched: 3.6.7 builds v141 in
+     every configuration, where 2.7.0 pinned `Windows7.1SDK` in Release|x64.
 
   d) Right click Solution, and select Build Solution.
 
