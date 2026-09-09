@@ -14,7 +14,7 @@ git submodule update --init --recursive
 
 2) Compile
 
-  a) Open libsscrypto.sln with Visual Studio 2017.
+  a) Open libsscrypto.sln with Visual Studio 2022.
 
   b) Change the platform to Win32 (32-bit) or x64 (64-bit).
 
@@ -24,15 +24,18 @@ git submodule update --init --recursive
 
   c) Right click Solution, and select Build Solution.
 
-     Nothing has to be changed by hand in the mbedTLS project any more. It
-     builds v141 in every configuration now, and `Directory.Build.targets`
-     forces its Runtime Library to /MT so it links against the /MT
-     libsscrypto. On a newer Visual Studio, override the toolset on the
-     command line instead of retargeting the projects, the way CI does:
+     Visual Studio will offer to retarget mbedTLS, whose upstream project
+     still pins v141, accept it. That is the only prompt: the Runtime
+     Library does not have to be changed by hand, because
+     `Directory.Build.targets` forces mbedTLS to /MT so it links against the
+     /MT libsscrypto.
+
+     To build without the prompt, override the toolset on the command line
+     instead, the way CI does:
 
      ```
      msbuild libsscrypto.sln /p:Configuration=Release /p:Platform=x64 ^
-       /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0
+       /p:PlatformToolset=v143
      ```
 
 3) Output
@@ -48,11 +51,12 @@ git submodule update --init --recursive
 
 `.github/workflows/build.yml` builds both platforms on every push and, on a
 tag, publishes the DLLs as a release. It differs from the steps above in one
-way, because a hosted runner has no VS2017: the toolset is overridden on the
-MSBuild command line, as above. libsodium's output directory is derived from
-`$(PlatformToolset)` and libsscrypto.vcxproj follows it, so the two stay in
-step whichever toolset is selected. Everything else, OpenSSL included, is
-what a local build uses.
+way: a runner cannot answer the mbedTLS retarget prompt, so it passes
+`/p:PlatformToolset` on the MSBuild command line, as above. That value is the
+one the projects here already select, so CI and a local build agree on the
+toolset. libsodium's output directory is derived from `$(PlatformToolset)` and
+libsscrypto.vcxproj follows it, so the two stay in step whichever toolset is
+selected. Everything else, OpenSSL included, is what a local build uses.
 
 `.github/workflows/openssl.yml` rebuilds `libcrypto.lib` for both platforms
 from source, following the same steps as `openssl-prebuilt-lib/README.txt`, and
