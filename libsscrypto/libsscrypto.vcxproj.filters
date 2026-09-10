@@ -38,18 +38,6 @@
     <ClCompile Include="..\blake3\c\blake3_portable.c">
       <Filter>源文件\blake3</Filter>
     </ClCompile>
-    <ClCompile Include="..\blake3\c\blake3_sse2.c">
-      <Filter>源文件\blake3</Filter>
-    </ClCompile>
-    <ClCompile Include="..\blake3\c\blake3_sse41.c">
-      <Filter>源文件\blake3</Filter>
-    </ClCompile>
-    <ClCompile Include="..\blake3\c\blake3_avx2.c">
-      <Filter>源文件\blake3</Filter>
-    </ClCompile>
-    <ClCompile Include="..\blake3\c\blake3_avx512.c">
-      <Filter>源文件\blake3</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\blake3\c\blake3_sse2_x86-64_windows_msvc.asm">

@@ -13,22 +13,11 @@ jobs:
   openssl:
     runs-on: windows-2025
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86
-            platform: Win32
-            target: VC-WIN32
-          - arch: x64
-            platform: x64
-            target: VC-WIN64A
-
     steps:
       - name: Setup MSVC
         uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
-          arch: ${{ matrix.arch }}
+          arch: x64
 
       - name: Build OpenSSL
         shell: cmd
@@ -40,7 +29,7 @@ jobs:
           curl -fsSLo openssl.tar.gz https://github.com/openssl/openssl/releases/download/openssl-%OPENSSL_VERSION%/openssl-%OPENSSL_VERSION%.tar.gz || exit /b 1
           tar -xzf openssl.tar.gz || exit /b 1
           cd openssl-%OPENSSL_VERSION% || exit /b 1
-          perl Configure ${{ matrix.target }} no-shared no-apps no-docs no-tests --release || exit /b 1
+          perl Configure VC-WIN64A no-shared no-apps no-docs no-tests --release || exit /b 1
           perl -i -pe "s{\s*/Zi\b}{}g, s{\s*/Fd\S+}{}g if /^(?:CNF_)?LIB_CFLAGS\s*=/" makefile || exit /b 1
           findstr /b /c:"LIB_CFLAGS" makefile || exit /b 1
           nmake build_libs || exit /b 1
@@ -56,6 +45,6 @@ jobs:
       - name: Upload OpenSSL artifact
         uses: actions/upload-artifact@v7
         with:
-          name: openssl-${{ matrix.platform }}
+          name: openssl-x64
           path: openssl-lib/*
           if-no-files-found: error

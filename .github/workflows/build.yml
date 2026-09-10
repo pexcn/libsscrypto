@@ -14,17 +14,6 @@ jobs:
   build:
     runs-on: windows-2025
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86
-            platform: Win32
-            output: Release
-          - arch: x64
-            platform: x64
-            output: x64/Release
-
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -34,13 +23,13 @@ jobs:
       - name: Setup MSVC
         uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
-          arch: ${{ matrix.arch }}
+          arch: x64
 
       - name: Check OpenSSL
         shell: cmd
         run: |
-          if not exist openssl-prebuilt-lib\${{ matrix.platform }}\libcrypto.lib (
-            echo openssl-prebuilt-lib\${{ matrix.platform }}\libcrypto.lib is missing
+          if not exist openssl-prebuilt-lib\x64\libcrypto.lib (
+            echo openssl-prebuilt-lib\x64\libcrypto.lib is missing
             echo run the "openssl" workflow and commit its artifact
             exit /b 1
           )
@@ -50,25 +39,25 @@ jobs:
         run: >
           msbuild libsscrypto.sln /m /nologo
           /p:Configuration=Release
-          /p:Platform=${{ matrix.platform }}
+          /p:Platform=x64
           /p:PlatformToolset=%PLATFORM_TOOLSET%
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: libsscrypto-${{ matrix.platform }}
+          name: libsscrypto-x64
           path: |
-            ${{ matrix.output }}\libsscrypto*.dll
-            ${{ matrix.output }}\libsscrypto*.pdb
+            x64\Release\libsscrypto*.dll
+            x64\Release\libsscrypto*.pdb
           if-no-files-found: error
 
       - name: Package release archive
         if: startsWith(github.ref, 'refs/tags/')
         shell: pwsh
-        run: Compress-Archive -Path ${{ matrix.output }}\libsscrypto*.dll -DestinationPath libsscrypto-${{ matrix.platform }}.zip
+        run: Compress-Archive -Path x64\Release\libsscrypto*.dll -DestinationPath libsscrypto-x64.zip
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
-          files: libsscrypto-${{ matrix.platform }}.zip
+          files: libsscrypto-x64.zip

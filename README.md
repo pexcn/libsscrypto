@@ -16,17 +16,15 @@ git submodule update --init --recursive
 
   a) Open libsscrypto.sln with Visual Studio 2022.
 
-  b) Change the platform to Win32 (32-bit) or x64 (64-bit).
-
-     Release is the only configuration; there is no Debug build. Both
-     platforms link the `libcrypto.lib` committed under
-     `openssl-prebuilt-lib/`, so nothing has to be fetched or built first.
+  b) x64 is the only platform and Release the only configuration; there is no
+     32-bit build and no Debug build. The `libcrypto.lib` committed under
+     `openssl-prebuilt-lib/` is what gets linked, so nothing has to be fetched
+     or built first.
 
      BLAKE3, which the 2022-blake3-* methods need for key derivation, is
      compiled from source into the DLL and picks its SIMD backend at run time.
-     x64 assembles upstream's hand written x86-64 assembly with MASM, which
-     the C++ workload already installs; Win32, which upstream ships no assembly
-     for, compiles the C intrinsics instead. Neither needs anything extra.
+     Its backends are upstream's hand written x86-64 assembly, assembled with
+     MASM, which the C++ workload already installs. Nothing extra is needed.
 
   c) Right click Solution, and select Build Solution.
 
@@ -46,27 +44,26 @@ git submodule update --init --recursive
 
 3) Output
 
-  * Win32 -> `Release\libsscrypto.dll`
-  * x64   -> `x64\Release\libsscrypto64.dll`
+  `x64\Release\libsscrypto64.dll`
 
-  The two DLLs export the same symbols, so a 64-bit host loads the x64 build
-  unchanged. Note the different file name: it keeps the two architectures from
-  colliding when a host unpacks them to the same directory.
+  The `64` in the file name dates from when a 32-bit `libsscrypto.dll` was
+  built alongside it and the two had to be told apart. It is kept because
+  hosts load the DLL by that name.
 
 ## Continuous integration
 
-`.github/workflows/build.yml` builds both platforms on every push and, on a
-tag, publishes the DLLs as a release. It differs from the steps above in one
-way: a runner cannot answer the mbedTLS retarget prompt, so it passes
-`/p:PlatformToolset` on the MSBuild command line, as above. That value is the
-one the projects here already select, so CI and a local build agree on the
-toolset. libsodium's output directory is derived from `$(PlatformToolset)` and
-libsscrypto.vcxproj follows it, so the two stay in step whichever toolset is
-selected. Everything else, OpenSSL included, is what a local build uses.
+`.github/workflows/build.yml` builds on every push and, on a tag, publishes
+the DLL as a release. It differs from the steps above in one way: a runner
+cannot answer the mbedTLS retarget prompt, so it passes `/p:PlatformToolset`
+on the MSBuild command line, as above. That value is the one the projects here
+already select, so CI and a local build agree on the toolset. libsodium's
+output directory is derived from `$(PlatformToolset)` and libsscrypto.vcxproj
+follows it, so the two stay in step whichever toolset is selected. Everything
+else, OpenSSL included, is what a local build uses.
 
-`.github/workflows/openssl.yml` rebuilds `libcrypto.lib` for both platforms
-from source, following the same steps as `openssl-prebuilt-lib/README.txt`, and
-publishes each as the `openssl-<platform>` artifact. It runs only when started
-by hand (Actions -> openssl -> Run workflow, with the version to build), since
-the resulting `.lib` is committed to this repository; use it to regenerate
+`.github/workflows/openssl.yml` rebuilds `libcrypto.lib` from source,
+following the same steps as `openssl-prebuilt-lib/README.txt`, and publishes
+it as the `openssl-x64` artifact. It runs only when started by hand
+(Actions -> openssl -> Run workflow, with the version to build), since the
+resulting `.lib` is committed to this repository; use it to regenerate
 `openssl-prebuilt-lib/` without installing Perl and NASM locally.
