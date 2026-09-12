@@ -28,14 +28,7 @@ git submodule update --init --recursive
 
   c) Right click Solution, and select Build Solution.
 
-     Visual Studio will offer to retarget mbedTLS, whose upstream project
-     still pins v141, accept it. That is the only prompt: the Runtime
-     Library does not have to be changed by hand, because
-     `Directory.Build.targets` forces mbedTLS to /MT so it links against the
-     /MT libsscrypto.
-
-     To build without the prompt, override the toolset on the command line
-     instead, the way CI does:
+     The equivalent command-line build is:
 
      ```
      msbuild libsscrypto.sln /p:Configuration=Release /p:Platform=x64 ^
@@ -53,13 +46,10 @@ git submodule update --init --recursive
 ## Continuous integration
 
 `.github/workflows/build.yml` builds on every push and, on a tag, publishes
-the DLL as a release. It differs from the steps above in one way: a runner
-cannot answer the mbedTLS retarget prompt, so it passes `/p:PlatformToolset`
-on the MSBuild command line, as above. That value is the one the projects here
-already select, so CI and a local build agree on the toolset. libsodium's
-output directory is derived from `$(PlatformToolset)` and libsscrypto.vcxproj
-follows it, so the two stay in step whichever toolset is selected. Everything
-else, OpenSSL included, is what a local build uses.
+the DLL as a release. It passes `/p:PlatformToolset` on the MSBuild command
+line so CI and local builds agree on the toolset. libsodium's output directory
+is derived from `$(PlatformToolset)` and libsscrypto.vcxproj follows it, so the
+two stay in step whichever toolset is selected.
 
 `.github/workflows/openssl.yml` rebuilds `libcrypto.lib` from source,
 following the same steps as `openssl-prebuilt-lib/README.txt`, and publishes

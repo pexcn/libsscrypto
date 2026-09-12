@@ -2,10 +2,6 @@
 	path = libsodium
 	url = https://github.com/jedisct1/libsodium.git
 	ignore = dirty
-[submodule "mbedtls"]
-	path = mbedtls
-	url = https://github.com/ARMmbed/mbedtls.git
-	ignore = dirty
 [submodule "blake3"]
 	path = blake3
 	url = https://github.com/BLAKE3-team/BLAKE3.git

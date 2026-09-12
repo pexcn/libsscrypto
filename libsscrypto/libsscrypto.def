@@ -1,19 +1,6 @@
 LIBRARY
 
 EXPORTS
-	cipher_update=mbedtls_cipher_update
-	cipher_info_from_string=mbedtls_cipher_info_from_string
-	cipher_init=mbedtls_cipher_init
-	cipher_setup=mbedtls_cipher_setup
-	cipher_setkey=mbedtls_cipher_setkey
-	cipher_set_iv=mbedtls_cipher_set_iv
-	cipher_reset=mbedtls_cipher_reset
-	cipher_free=mbedtls_cipher_free
-	cipher_auth_encrypt_ext=mbedtls_cipher_auth_encrypt_ext
-	cipher_auth_decrypt_ext=mbedtls_cipher_auth_decrypt_ext
-	crypto_stream_chacha20_xor_ic
-	crypto_stream_chacha20_ietf_xor_ic
-	crypto_stream_salsa20_xor_ic
 	crypto_aead_chacha20poly1305_ietf_encrypt
 	crypto_aead_chacha20poly1305_ietf_decrypt
 	crypto_aead_xchacha20poly1305_ietf_encrypt
@@ -23,12 +10,10 @@ EXPORTS
 	crypto_aead_aes256gcm_is_available
 	sodium_increment
 	sodium_init
-	cipher_get_size_ex
-	md5_ret=mbedtls_md5
+	md5_ret=sscrypto_md5
 	hkdf=sscrypto_hkdf_sha1
 	EVP_CIPHER_CTX_new
 	EVP_CIPHER_CTX_free
-	EVP_CIPHER_CTX_reset
 	EVP_CipherInit_ex
 	EVP_CipherUpdate
 	EVP_CipherFinal_ex
@@ -36,10 +21,7 @@ EXPORTS
 	EVP_CIPHER_CTX_set_key_length
 	EVP_CIPHER_CTX_ctrl
 	EVP_get_cipherbyname
-	blake3_hasher_init
-	blake3_hasher_init_keyed
 	blake3_hasher_init_derive_key_raw
-	blake3_hasher_reset
 	blake3_hasher_update
 	blake3_hasher_finalize
 	blake3_hasher_size=sscrypto_blake3_hasher_size

@@ -21,10 +21,10 @@
     <ClCompile Include="blake3_hasher_size.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="cipher_get_size_ex.c">
+    <ClCompile Include="hkdf.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="hkdf.c">
+    <ClCompile Include="md5.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,10 +62,7 @@
     <ClInclude Include="..\blake3\c\blake3.h">
       <Filter>源文件\blake3</Filter>
     </ClInclude>
-    <ClInclude Include="..\mbedtls\include\mbedtls\md.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mbedtls\include\mbedtls\cipher.h">
+    <ClInclude Include="openssl3.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

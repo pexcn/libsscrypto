@@ -33,7 +33,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)libsodium\src\libsodium\include;$(SolutionDir)mbedtls\include;$(SolutionDir)blake3\c;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libsodium\src\libsodium\include;$(SolutionDir)blake3\c;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)libsodium\bin\$(Platform)\$(Configuration)\$(PlatformToolset)\static;$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)openssl-prebuilt-lib\$(Platform)\;$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
@@ -53,13 +53,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>libsscrypto.def</ModuleDefinitionFile>
-      <AdditionalDependencies>Ws2_32.lib;gdi32.lib;advapi32.lib;crypt32.lib;user32.lib;bcrypt.lib;libsodium.lib;mbedTLS.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;gdi32.lib;advapi32.lib;crypt32.lib;user32.lib;bcrypt.lib;libsodium.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="blake3_hasher_size.c" />
-    <ClCompile Include="cipher_get_size_ex.c" />
     <ClCompile Include="hkdf.c" />
+    <ClCompile Include="md5.c" />
     <ClCompile Include="..\blake3\c\blake3.c" />
     <ClCompile Include="..\blake3\c\blake3_dispatch.c" />
     <ClCompile Include="..\blake3\c\blake3_portable.c" />
@@ -82,8 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\blake3\c\blake3.h" />
-    <ClInclude Include="..\mbedtls\include\mbedtls\cipher.h" />
-    <ClInclude Include="..\mbedtls\include\mbedtls\md.h" />
+    <ClInclude Include="openssl3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
