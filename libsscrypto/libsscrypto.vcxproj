@@ -57,6 +57,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="aead.c" />
     <ClCompile Include="blake3_hasher_size.c" />
     <ClCompile Include="hkdf.c" />
     <ClCompile Include="md5.c" />

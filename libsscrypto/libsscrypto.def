@@ -18,6 +18,8 @@ EXPORTS
 	EVP_CIPHER_CTX_set_key_length
 	EVP_CIPHER_CTX_ctrl
 	EVP_get_cipherbyname
+	sscrypto_aead_encrypt
+	sscrypto_aead_decrypt
 	blake3_hasher_init_derive_key_raw
 	blake3_hasher_update
 	blake3_hasher_finalize

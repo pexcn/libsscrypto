@@ -56,6 +56,8 @@ SSCRYPTO_STATIC_ASSERT(OSSL_PARAM_UTF8_STRING == 4,
 typedef struct ossl_lib_ctx_st OSSL_LIB_CTX;
 typedef struct evp_mac_st EVP_MAC;
 typedef struct evp_mac_ctx_st EVP_MAC_CTX;
+typedef struct evp_cipher_st EVP_CIPHER;
+typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
 typedef SSCRYPTO_OSSL_PARAM_ABI OSSL_PARAM;
 
 #define SSCRYPTO_PARAM_UTF8_STRING 4
@@ -75,6 +77,13 @@ int EVP_MAC_init(EVP_MAC_CTX *ctx, const unsigned char *key, size_t keylen,
 int EVP_MAC_update(EVP_MAC_CTX *ctx, const unsigned char *data, size_t datalen);
 int EVP_MAC_final(EVP_MAC_CTX *ctx, unsigned char *out, size_t *outl,
 		  size_t outsize);
+
+int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type, void *impl,
+		      const unsigned char *key, const unsigned char *iv, int enc);
+int EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
+		     const unsigned char *in, int inl);
+int EVP_CipherFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm, int *outl);
+int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr);
 
 #endif
 
