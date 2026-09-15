@@ -1,11 +1,24 @@
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include "openssl3.h"
 
+#include <windows.h>
+
+#include <stdlib.h>
 #include <string.h>
 
 #define SSCRYPTO_HKDF_BAD_INPUT_DATA (-0x5F80)
 #define SSCRYPTO_OPENSSL_ERROR (-1)
 #define SHA1_SIZE 20
 #define HKDF_MAX_OUTPUT_SIZE (255 * SHA1_SIZE)
+
+static INIT_ONCE hmac_once = INIT_ONCE_STATIC_INIT;
+static EVP_MAC *hmac_mac = NULL;
 
 static void sscrypto_zeroize(void *buffer, size_t length)
 {
@@ -17,36 +30,59 @@ static void sscrypto_zeroize(void *buffer, size_t length)
 }
 
 /*
- * HKDF-SHA1, exported from libsscrypto.def as "hkdf". Keep the legacy ABI:
- * the entry point hardcodes SHA-1 and takes int lengths.
+ * The fetched EVP_MAC is immutable after publication. Each HKDF context owns
+ * its own EVP_MAC_CTX, so concurrent callers share only the algorithm object,
+ * not mutable MAC state.
  *
- * Implement RFC 5869 directly on top of OpenSSL 3's EVP_MAC HMAC provider.
- * Besides avoiding EVP_KDF's 32 KiB info limit, this lets one MAC context be
- * reused for Extract and every Expand block, which matters for AEAD-2018 UDP
- * where a new subkey is derived for every datagram.
+ * MSVC runs a DLL's atexit callbacks when the DLL is unloaded. Register the
+ * cache cleanup only after EVP_MAC_fetch() has completed. Any OpenSSL cleanup
+ * callback registered during that fetch is therefore older and runs after our
+ * callback because atexit is LIFO. Returning FALSE leaves INIT_ONCE
+ * uninitialized and allows a later
+ * caller to retry if either the fetch or atexit registration failed.
  */
-int sscrypto_hkdf_sha1(const unsigned char *salt, int salt_len,
-                       const unsigned char *ikm, int ikm_len,
-                       const unsigned char *info, int info_len,
-                       unsigned char *okm, int okm_len)
+static void sscrypto_hmac_cache_cleanup(void)
 {
-	static const unsigned char empty = 0;
-	static const unsigned char null_salt[SHA1_SIZE] = { 0 };
-	static char digest[] = "SHA1";
-	EVP_MAC *mac = NULL;
-	EVP_MAC_CTX *ctx = NULL;
-	OSSL_PARAM params[] = {
-		SSCRYPTO_PARAM_UTF8("digest", digest),
-		SSCRYPTO_PARAM_END
-	};
-	unsigned char prk[SHA1_SIZE] = { 0 };
-	unsigned char t[SHA1_SIZE] = { 0 };
-	size_t mac_len = 0;
-	size_t where = 0;
-	size_t t_len = 0;
-	unsigned int block = 1;
-	int result = SSCRYPTO_OPENSSL_ERROR;
+	EVP_MAC *mac = hmac_mac;
 
+	hmac_mac = NULL;
+	EVP_MAC_free(mac);
+}
+
+static BOOL CALLBACK sscrypto_hmac_cache_init(PINIT_ONCE once, PVOID parameter,
+                                               PVOID *context)
+{
+	EVP_MAC *mac;
+
+	(void) once;
+	(void) parameter;
+	(void) context;
+
+	mac = EVP_MAC_fetch(NULL, "HMAC", NULL);
+	if (mac == NULL) {
+		return FALSE;
+	}
+	if (atexit(sscrypto_hmac_cache_cleanup) != 0) {
+		EVP_MAC_free(mac);
+		return FALSE;
+	}
+
+	hmac_mac = mac;
+	return TRUE;
+}
+
+static EVP_MAC *sscrypto_hmac_get(void)
+{
+	if (!InitOnceExecuteOnce(&hmac_once, sscrypto_hmac_cache_init, NULL, NULL)) {
+		return NULL;
+	}
+	return hmac_mac;
+}
+
+static int sscrypto_hkdf_validate(const unsigned char *ikm, int ikm_len,
+                                  int salt_len, int info_len,
+                                  unsigned char *okm, int okm_len)
+{
 	if (salt_len < 0 || ikm_len < 0 || info_len < 0 || okm_len < 0) {
 		return SSCRYPTO_HKDF_BAD_INPUT_DATA;
 	}
@@ -59,12 +95,76 @@ int sscrypto_hkdf_sha1(const unsigned char *salt, int salt_len,
 	if (okm_len == 0) {
 		return 0;
 	}
+	return 1;
+}
 
-	/*
-	 * Preserve the wrapper's historical NULL handling. A NULL salt meant
-	 * "salt not provided" regardless of salt_len, which RFC 5869 defines as
-	 * HashLen zero octets. A NULL info likewise means an empty info string.
-	 */
+/*
+ * Allocate a reusable HKDF-SHA1 context. The digest parameter is constant, so
+ * set it once here rather than once per derivation. A context is mutable and
+ * must not be used concurrently by multiple threads.
+ */
+void *sscrypto_hkdf_ctx_new(void)
+{
+	static char digest[] = "SHA1";
+	OSSL_PARAM params[] = {
+		SSCRYPTO_PARAM_UTF8("digest", digest),
+		SSCRYPTO_PARAM_END
+	};
+	EVP_MAC *mac = sscrypto_hmac_get();
+	EVP_MAC_CTX *ctx;
+
+	if (mac == NULL) {
+		return NULL;
+	}
+
+	ctx = EVP_MAC_CTX_new(mac);
+	if (ctx == NULL) {
+		return NULL;
+	}
+	if (EVP_MAC_CTX_set_params(ctx, params) != 1) {
+		EVP_MAC_CTX_free(ctx);
+		return NULL;
+	}
+	return ctx;
+}
+
+void sscrypto_hkdf_ctx_free(void *opaque_ctx)
+{
+	EVP_MAC_CTX_free((EVP_MAC_CTX *) opaque_ctx);
+}
+
+/*
+ * Derive HKDF-SHA1 using a caller-owned context. Reinitializing HMAC after
+ * EVP_MAC_final() is supported, so one context can serve repeated datagrams.
+ */
+int sscrypto_hkdf_ctx_derive(void *opaque_ctx,
+                             const unsigned char *salt, int salt_len,
+                             const unsigned char *ikm, int ikm_len,
+                             const unsigned char *info, int info_len,
+                             unsigned char *okm, int okm_len)
+{
+	static const unsigned char empty = 0;
+	static const unsigned char null_salt[SHA1_SIZE] = { 0 };
+	EVP_MAC_CTX *ctx = (EVP_MAC_CTX *) opaque_ctx;
+	unsigned char prk[SHA1_SIZE] = { 0 };
+	unsigned char t[SHA1_SIZE] = { 0 };
+	size_t mac_len = 0;
+	size_t where = 0;
+	size_t t_len = 0;
+	unsigned int block = 1;
+	int valid;
+	int result = SSCRYPTO_OPENSSL_ERROR;
+
+	valid = sscrypto_hkdf_validate(ikm, ikm_len, salt_len, info_len, okm,
+	                               okm_len);
+	if (valid <= 0) {
+		return valid;
+	}
+	if (ctx == NULL) {
+		return SSCRYPTO_HKDF_BAD_INPUT_DATA;
+	}
+
+	/* RFC 5869 treats an omitted salt as HashLen zero octets. */
 	if (salt == NULL) {
 		salt = null_salt;
 		salt_len = SHA1_SIZE;
@@ -75,17 +175,6 @@ int sscrypto_hkdf_sha1(const unsigned char *salt, int salt_len,
 	}
 	if (ikm == NULL) {
 		ikm = &empty;
-	}
-
-	mac = EVP_MAC_fetch(NULL, "HMAC", NULL);
-	if (mac == NULL) {
-		goto exit;
-	}
-	ctx = EVP_MAC_CTX_new(mac);
-	EVP_MAC_free(mac);
-	mac = NULL;
-	if (ctx == NULL || EVP_MAC_CTX_set_params(ctx, params) != 1) {
-		goto exit;
 	}
 
 	/* HKDF-Extract(salt, IKM) -> PRK. */
@@ -122,8 +211,6 @@ int sscrypto_hkdf_sha1(const unsigned char *salt, int salt_len,
 	result = 0;
 
 exit:
-	EVP_MAC_CTX_free(ctx);
-	EVP_MAC_free(mac);
 	sscrypto_zeroize(prk, sizeof(prk));
 	sscrypto_zeroize(t, sizeof(t));
 	return result;

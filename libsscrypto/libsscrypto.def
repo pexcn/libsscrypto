@@ -8,7 +8,9 @@ EXPORTS
 	sodium_increment
 	sodium_init
 	md5_ret=sscrypto_md5
-	hkdf=sscrypto_hkdf_sha1
+	sscrypto_hkdf_ctx_new
+	sscrypto_hkdf_ctx_derive
+	sscrypto_hkdf_ctx_free
 	sscrypto_aead_ctx_new
 	sscrypto_aead_ctx_set_key
 	sscrypto_aead_ctx_free
