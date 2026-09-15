@@ -18,7 +18,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="blake3_hasher_size.c">
+    <ClCompile Include="aead.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="blake3_wrapper.c">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="hkdf.c">

@@ -58,7 +58,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="aead.c" />
-    <ClCompile Include="blake3_hasher_size.c" />
+    <ClCompile Include="blake3_wrapper.c" />
     <ClCompile Include="hkdf.c" />
     <ClCompile Include="md5.c" />
     <ClCompile Include="..\blake3\c\blake3.c" />

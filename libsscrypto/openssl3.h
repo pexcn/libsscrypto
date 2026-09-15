@@ -24,6 +24,7 @@ typedef struct sscrypto_ossl_param_abi {
 
 #include <openssl/evp.h>
 #include <openssl/core.h>
+#include <openssl/crypto.h>
 
 #if defined(__cplusplus)
 #define SSCRYPTO_STATIC_ASSERT(expr, msg) static_assert((expr), msg)
@@ -62,6 +63,8 @@ typedef SSCRYPTO_OSSL_PARAM_ABI OSSL_PARAM;
 
 #define SSCRYPTO_PARAM_UTF8_STRING 4
 
+void OPENSSL_cleanse(void *ptr, size_t len);
+
 int EVP_Q_digest(OSSL_LIB_CTX *libctx, const char *name, const char *propq,
 		 const void *data, size_t datalen, unsigned char *md,
 		 size_t *mdlen);
@@ -84,6 +87,11 @@ int EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
 		     const unsigned char *in, int inl);
 int EVP_CipherFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm, int *outl);
 int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr);
+EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
+void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *ctx);
+int EVP_CIPHER_CTX_set_padding(EVP_CIPHER_CTX *ctx, int pad);
+int EVP_CIPHER_CTX_set_key_length(EVP_CIPHER_CTX *ctx, int keylen);
+const EVP_CIPHER *EVP_get_cipherbyname(const char *name);
 
 #endif
 

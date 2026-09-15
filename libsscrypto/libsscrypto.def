@@ -9,18 +9,9 @@ EXPORTS
 	sodium_init
 	md5_ret=sscrypto_md5
 	hkdf=sscrypto_hkdf_sha1
-	EVP_CIPHER_CTX_new
-	EVP_CIPHER_CTX_free
-	EVP_CipherInit_ex
-	EVP_CipherUpdate
-	EVP_CipherFinal_ex
-	EVP_CIPHER_CTX_set_padding
-	EVP_CIPHER_CTX_set_key_length
-	EVP_CIPHER_CTX_ctrl
-	EVP_get_cipherbyname
+	sscrypto_aead_ctx_new
+	sscrypto_aead_ctx_set_key
+	sscrypto_aead_ctx_free
 	sscrypto_aead_encrypt
 	sscrypto_aead_decrypt
-	blake3_hasher_init_derive_key_raw
-	blake3_hasher_update
-	blake3_hasher_finalize
-	blake3_hasher_size=sscrypto_blake3_hasher_size
+	sscrypto_blake3_derive_key
